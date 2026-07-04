@@ -1,0 +1,17 @@
+<form method="POST">
+{% csrf_token %}
+
+<input type="text"
+       name="otp"
+       maxlength="6"
+       placeholder="_ _ _ _ _ _">
+
+<button type="submit">
+Verify OTP
+</button>
+
+</form>
+
+{% for message in messages %}
+<p>{{ message }}</p>
+{% endfor %}

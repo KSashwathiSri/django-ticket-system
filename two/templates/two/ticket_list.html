@@ -1,0 +1,61 @@
+
+{% extends 'two/home.html' %}
+{% load static %}
+{% block content %}
+
+<center>
+
+<h1 class="display-4"
+style="background-color:#637462; color:white; padding:15px; border-radius:10px;">
+Ticket List
+</h1>
+<table border="1" cellpadding="10">
+
+    <tr>
+        <th>Ticket ID</th>
+        <th>Subject</th>
+        <th>Status</th>
+        <th>Priority</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for ticket in tickets %}
+
+    <tr>
+        <td>{{ ticket.Ticketid }}</td>
+        <td>{{ ticket.Subject }}</td>
+        <td>{{ ticket.Status }}</td>
+        <td>{{ ticket.Priority }}</td>
+
+        <td>
+            <a href="{% url 'update_ticket' ticket.Ticketid %}">
+                Edit
+            </a>
+
+            |
+
+            <a href="{% url 'delete_ticket' ticket.Ticketid %}">
+                Delete
+            </a>
+        </td>
+    </tr>
+
+    {% empty %}
+
+    <tr>
+        <td colspan="5">No tickets available.</td>
+    </tr>
+
+    {% endfor %}
+
+</table>
+
+<br>
+
+<a href="{% url 'upload' %}">
+    Add New Ticket
+</a>
+
+</center>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+<form method="POST">
+{% csrf_token %}
+
+<input type="email"
+       name="email"
+       placeholder="Enter Email"
+       required>
+
+<button type="submit">
+Generate OTP
+</button>
+
+</form>
