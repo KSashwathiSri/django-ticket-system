@@ -12,6 +12,26 @@
     <div class="main-container">
         {% include 'sidebar.html' %}
         <div class="main">
+            <style>
+    .main-container {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100vw !important;
+    }
+
+    .main {
+        width: calc(100vw - 250px) !important;
+        margin-left: 250px !important;
+        padding: 40px 30px 30px 30px !important;
+    }
+
+    .box-container {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start;
+        width: 100%;
+    }
+</style>
             {% block content %}
             {% endblock %}
         </div>

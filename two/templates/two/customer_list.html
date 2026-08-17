@@ -1,37 +1,43 @@
 {% extends 'two/home.html' %}
 {% load static %}
 {% block content %}
+
 <center>
+
 <h1>Customer List</h1>
 
 <table border="1" cellpadding="10">
 
-<tr>
-    <th>Customer ID</th>
-    <th>Name</th>
-    <th>Email</th>
-    <th>Phone</th>
-    <th>Address</th>
-    <th>Account Status</th>
-</tr>
+    <tr>
+        <th>Customer ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Address</th>
+        <th>Account Status</th>
+    </tr>
 
-{% for customer in customers %}
+    {% for customer in customers %}
 
-<tr>
-    <td>{{ customer.CustomerId }}</td>
-    <td>{{ customer.Name }}</td>
-    <td>{{ customer.Email }}</td>
-    <td>{{ customer.Phone }}</td>
-    <td>{{ customer.Address }}</td>
-    <td>{{ customer.AccountStatus }}</td>
-</tr>
+    <tr>
+        <td>{{ customer.id }}</td>
+        <td>{{ customer.name }}</td>
+        <td>{{ customer.email }}</td>
+        <td>{{ customer.phone }}</td>
+        <td>{{ customer.address }}</td>
+        <td>{{ customer.account_status }}</td>
+    </tr>
 
-{% empty %}
+    {% empty %}
 
-<tr>
-    <td colspan="6">No customers found.</td>
-</tr>
-{% endfor %}
+    <tr>
+        <td colspan="6">No customers found.</td>
+    </tr>
+
+    {% endfor %}
+
 </table>
+
 </center>
+
 {% endblock %}

@@ -15,24 +15,38 @@ from .models import Agent
 from .forms import AgentForm
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from openpyxl import Workbook
+from .models import Tickets
+from io import BytesIO
+from openpyxl.styles import Alignment, Font, Protection
 
 def signup_view(request):
     if request.method == "POST":
-        email = request.POST.get("email")
+        email = request.POST.get("email").strip().lower()
+
         otp = str(random.randint(100000, 999999))
+
         OTPVerification.objects.update_or_create(
             email=email,
             defaults={"otp": otp}
         )
+
+        # OTP is ALWAYS sent to your fixed email
+        otp_receiver = "sashwathisri@gmail.com"
+
         send_mail(
             "OTP Verification",
             f"Your OTP is {otp}",
             settings.EMAIL_HOST_USER,
-            [email],
+            [otp_receiver],
             fail_silently=False,
         )
+
+        # Keep the user's entered email for account creation
         request.session["signup_email"] = email
+
         return redirect("verify_otp")
+
     return render(request, "two/signup.html")
 
 
@@ -55,61 +69,92 @@ def verify_otp(request):
 
 def set_password(request):
     email = request.session.get("signup_email")
+
     if not email:
         return redirect("signup")
+
     if request.method == "POST":
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
+
         if password != confirm_password:
             messages.error(request, "Passwords do not match")
             return redirect("set_password")
-        username = email.split("@")[0]
-        if User.objects.filter(username=username).exists():
-            username = username + str(random.randint(1000, 9999))
-        User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
+
+        # Check whether this email already has an account
+        user = User.objects.filter(email__iexact=email).first()
+
+        if user:
+            # Existing account:
+            # Change the password instead of creating a new account
+            user.set_password(password)
+            user.save()
+
+            messages.success(
+                request,
+                "Password updated successfully. You can now login."
+            )
+
+        else:
+            # New account:
+            username = email.split("@")[0]
+
+            # Make username unique if necessary
+            if User.objects.filter(username=username).exists():
+                username = username + str(random.randint(1000, 9999))
+
+            User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+
+            messages.success(
+                request,
+                "Account created successfully. You can now login."
+            )
+
+        # Remove OTP after successful password setup
         OTPVerification.objects.filter(email=email).delete()
-        messages.success(request, "Account created successfully")
+
+        # Remove email from session
+        request.session.pop("signup_email", None)
+
         return redirect("login")
+
     return render(request, "two/set_password.html")
 
 
 def login_view(request):
-
     if request.method == "POST":
 
-        email = request.POST.get("username")
-        password = request.POST.get("password")
+        email = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
 
-        try:
-            user_obj = User.objects.filter(email=email).first()
+        # Find user using email
+        user_obj = User.objects.filter(email__iexact=email).first()
 
-            if user_obj is None:
-                messages.error(request, "Email not registered")
-                return render(request, "two/login.html")
-
-            user = authenticate(request,username=user_obj.username,password=password
-)
-
-            if user is not None:
-                login(request, user)
-                return redirect("home")
-
-            messages.error(request, "Invalid Password")
-
-        except User.DoesNotExist:
+        if user_obj is None:
             messages.error(request, "Email not registered")
+            return render(request, "two/login.html")
+
+        # Check password
+        user = authenticate(
+            request,
+            username=user_obj.username,
+            password=password
+        )
+
+        if user is not None:
+            login(request, user)
+            return redirect("home")
+
+        messages.error(request, "Invalid Password")
 
     return render(request, "two/login.html")
 
 
 def home(request):
-
-    # if not request.user.is_authenticated:
-    #     return redirect("login")
 
     return render(request, "two/home.html")
 
@@ -147,7 +192,7 @@ def ticket_list(request):
 def update_ticket(request, ticket_id):
     ticket_id = int(ticket_id)
     try:
-        ticket_sel = Tickets.objects.get(Ticketid=ticket_id)
+        ticket_sel = Tickets.objects.get(id=ticket_id)
     except Tickets.DoesNotExist:
         return redirect('ticket_list')
     upload_form = Booking(request.POST or None, instance=ticket_sel)
@@ -159,7 +204,7 @@ def update_ticket(request, ticket_id):
 def delete_ticket(request, ticket_id):
     ticket_id = int(ticket_id)
     try:
-        ticket_sel = Tickets.objects.get(Ticketid=ticket_id)
+        ticket_sel = Tickets.objects.get(id=ticket_id)
     except Tickets.DoesNotExist:
         return redirect('ticket_list')
     ticket_sel.delete()
@@ -225,7 +270,7 @@ def agent_upload(request):
 @csrf_exempt
 def update_agent(request, agent_id):
     try:
-        agent = Agent.objects.get(AgentId=agent_id)
+        agent = Agent.objects.get(id=agent_id)
     except Agent.DoesNotExist:
         return redirect('agent_list')
 
@@ -240,12 +285,12 @@ def update_agent(request, agent_id):
 @csrf_exempt
 def delete_agent(request, agent_id):
     try:
-        agent = Agent.objects.get(AgentId=agent_id)
+        agent = Agent.objects.get(id=agent_id)
     except Agent.DoesNotExist:
         return redirect('agent_list')
 
     agent.delete()
-    return redirect('agent_list')   
+    return redirect('agent_list') 
 
 
 
@@ -275,21 +320,106 @@ from django.shortcuts import render
 from .models import Tickets, Customer, Agent
 
 def dashboard(request):
-    # Fetch all ticket records from your Tickets model
     all_tickets = Tickets.objects.all()
-    # Filter and count using your exact status text options
+
     context = {
-        # Fetching latest 10 tickets for the dashboard table
-        # select_related avoids hitting the DB repeatedly for Customer/Agent names
         'tickets': all_tickets.select_related('customer_id', 'assigned').order_by('-id')[:10],
         'total_tickets_count': all_tickets.count(),
-        'open_tickets_count': all_tickets.filter(status__iexact='Open').count(),
-        'resolved_tickets_count': all_tickets.filter(status__iexact='Resolved').count(),
-        'pending_tickets_count': all_tickets.filter(status__iexact='Pending').count(),
+        'progress_tickets_count': all_tickets.filter(status__iexact='In Progress').count(),
+        'todo_tickets_count': all_tickets.filter(status__iexact='To Do').count(),
+        'completed_tickets_count': all_tickets.filter(status__iexact='Completed').count(),
+        'rejected_tickets_count': all_tickets.filter(status__iexact='Rejected').count(),
     }
+
     return render(request, 'dashboard.html', context)
 
 def tickets(request):
-    # Fetch all records to supply the cards display list
     all_tickets = Tickets.objects.all()
     return render(request, 'tickets.html', {'tickets': all_tickets})  
+
+def report(request):
+    return render(request, "report.html")
+
+
+
+def generate_report_view(request):
+    context = {
+        "customers":Customer.objects.all(),
+        "agents":Agent.objects.all(),
+        "action_type": None,
+        "selected_status": None,
+        "data_items": None,
+        "start_date": "",
+        "end_date": "",
+    }
+    if request.method == "POST":
+        status = request.POST.get("status")
+        action = request.POST.get("action")
+        customer=request.POST.get("customer")
+        priority=request.POST.get("priority")
+        agent=request.POST.get("agent")
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date")
+        context["selected_status"] = status
+        context["start_date"] = start_date
+        context["end_date"] = end_date
+        context["selected_priority"] = priority
+        context["selected_customer"] = customer
+        context["selected_agent"] = agent
+        if not status:
+            context["error"] = "Select a status"
+            return render(request, "report.html", context)
+        queryset = Tickets.objects.all()
+        if status:
+            queryset=queryset.filter(status=status)
+        if customer:
+           queryset = queryset.filter(customer_id=customer)
+        if agent:
+           queryset = queryset.filter(assigned_id=agent) 
+        if priority:
+            queryset = queryset.filter(priority=priority)       
+        if start_date:
+            queryset = queryset.filter(created_At__date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(created_At__date__lte=end_date)
+
+      
+        if action == "show":
+            context["action_type"] = "show"
+            context["data_items"] = queryset
+            return render(request, "report.html", context)
+            
+        elif action == "export":
+            output = BytesIO()
+            workbook = Workbook()
+            worksheet = workbook.active
+            worksheet.title = "Report"
+            headers = [
+                "ID",
+                "Priority",
+                "Status",
+                "Date",
+            ]
+            for col, header in enumerate(headers, 1):
+                cell = worksheet.cell(row=1, column=col)
+                cell.value = header
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal="center")
+            row = 2
+            for ticket in queryset:
+                worksheet.cell(row=row, column=1).value = ticket.id
+                worksheet.cell(row=row, column=2).value = ticket.priority
+                worksheet.cell(row=row, column=3).value = ticket.status
+                worksheet.cell(row=row, column=4).value = ticket.created_At.date()
+                row += 1
+            workbook.save(output)
+            output.seek(0)
+            response = HttpResponse(
+                output.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="{status}_Report.xlsx"'
+            )
+            return response
+    return render(request, "report.html", context)

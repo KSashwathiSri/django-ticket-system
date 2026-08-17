@@ -11,7 +11,6 @@
 <div class="box-container">
     <div class="box box1">
         <div class="text">
-            <!-- Dynamic count passed from views context -->
             <h2 class="topic-heading">{{ total_tickets_count|default:"0" }}</h2>
             <h2 class="topic">Total Tickets</h2>
         </div>
@@ -20,33 +19,39 @@
 
     <div class="box box2">
         <div class="text">
-            <h2 class="topic-heading">{{ open_tickets_count|default:"0" }}</h2>
-            <h2 class="topic">Open Tickets</h2>
+            <h2 class="topic-heading">{{ progress_tickets_count|default:"0" }}</h2>
+            <h2 class="topic">Progress</h2>
         </div>
         <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210185030/14.png">
     </div>
 
     <div class="box box3">
         <div class="text">
-            <h2 class="topic-heading">{{ resolved_tickets_count|default:"0" }}</h2>
-            <h2 class="topic">Resolved Tickets</h2>
+            <h2 class="topic-heading">{{ todo_tickets_count|default:"0" }}</h2>
+            <h2 class="topic">todo</h2>
         </div>
         <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210184645/Untitled-design-(32).png">
     </div>
 
     <div class="box box4">
         <div class="text">
-            <h2 class="topic-heading">{{ pending_tickets_count|default:"0" }}</h2>
-            <h2 class="topic">Pending Tickets</h2>
+            <h2 class="topic-heading">{{ completed_tickets_count|default:"0" }}</h2>
+            <h2 class="topic">Completed</h2>
         </div>
         <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210185029/13.png">
     </div>
-    <div class="box"
-        style="background-color:#4b00be;box-shadow:rgba(0,0,0,.3) 0px 20px 30px -10px;border-radius:20px;padding:15px;display:flex;align-items:center;justify-content:center;min-height:145px;">
-        <div style="width:100%;height:100%;position:relative;">
-            <canvas id="myChart"></canvas>
+    <div class="box box5">
+        <div class="text">
+            <h2 class="topic-heading">{{ rejected_tickets_count|default:"0" }}</h2>
+            <h2 class="topic">Rejected</h2>
         </div>
+        <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210185029/13.png">
     </div>
+    <div class="box box6">
+    <div style="width:100%;height:100%;position:relative;">
+        <canvas id="myChart"></canvas>
+    </div>
+</div>
 </div>
 
 <div class="report-container">
@@ -63,7 +68,6 @@
             <h3 class="t-op">Status</h3>
         </div>
         <div class="items" id="ticketItemsList">
-            <!-- Dynamic Recursive Rendering configured for your models.py fields -->
             {% for ticket in tickets %}
             <div class="item1 ticket-row">
                 <h3 class="t-op-nextlvl">T{{ ticket.id }}</h3>
@@ -84,15 +88,15 @@
 
 {% block scripts %}
 <script>
-// Populating chart variables dynamically from Django context fallback values
-const openCount = parseInt("{{ open_tickets_count|default:0 }}") || 0;
-const resolvedCount = parseInt("{{ resolved_tickets_count|default:0 }}") || 0;
-const pendingCount = parseInt("{{ pending_tickets_count|default:0 }}") || 0;
+const progressCount = parseInt("{{ progress_tickets_count|default:0 }}") || 0;
+const todoCount = parseInt("{{ todo_tickets_count|default:0 }}") || 0;
+const completedCount = parseInt("{{ completed_tickets_count|default:0 }}") || 0;
+const rejectedCount = parseInt("{{ rejected_tickets_count|default:0 }}") || 0;
 
-const xValues = ["Open Tickets", "Resolved Tickets", "Pending Tickets"];
-const yValues = [openCount, resolvedCount, pendingCount];
+const xValues = ["Progress", "todo", "Completed","Rejected"];
+const yValues = [progressCount, todoCount, completedCount,rejectedCount];
 
-const barColors = ["#adebb3", "#f97a5d", "#e9ab17"];
+const barColors = ["#adebb3", "#f97a5d", "#e9ab17","#ffbbed"];
 
 new Chart("myChart", {
     type: "pie",
@@ -123,7 +127,6 @@ new Chart("myChart", {
     }
 });
 
-// Front-end dynamic search filtering for table view content data
 document.getElementById('dashboardSearch').addEventListener('keyup', function(e) {
     const term = e.target.value.toLowerCase();
     const rows = document.querySelectorAll('.ticket-row');
@@ -131,7 +134,7 @@ document.getElementById('dashboardSearch').addEventListener('keyup', function(e)
     rows.forEach(row => {
         const textContent = row.textContent.toLowerCase();
         if (textContent.includes(term)) {
-            row.style.display = 'grid'; // matches style grid framework layout rules
+            row.style.display = 'grid'; 
         } else {
             row.style.display = 'none';
         }

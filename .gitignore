@@ -1,0 +1,19 @@
+(
+echo __pycache__/
+echo *.pyc
+echo.
+echo venv/
+echo env/
+echo .venv/
+echo.
+echo db.sqlite3
+echo.
+echo staticfiles/
+echo.
+echo .env
+echo.
+echo .idea/
+echo .vscode/
+echo.
+echo *.log
+) > .gitignore

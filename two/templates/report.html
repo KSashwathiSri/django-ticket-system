@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.report-page{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-right: 125px;
+}    
+.report-card{
+    width:100%;
+    max-width:650px;
+    margin: 30px auto;
+    transform: translateX(-50px);
+    padding:35px;
+    background:linear-gradient(135deg,var(--one-use-color),#290066);
+    border-radius:20px;
+    color:white;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+}
+.report-title{
+    text-align:center;
+    font-size:28px;
+    margin-bottom:25px;
+}
+.form-group{
+    margin-bottom:20px;
+}
+.form-group label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+    color:white;
+}
+.form-control{
+    width:100%;
+    height:45px;
+    border:none;
+    border-radius:10px;
+    padding:0 12px;
+    font-size:15px;
+    background:white;
+    color:#333;
+}
+.form-control:focus{
+    outline:none;
+    box-shadow:0 0 8px rgba(255,255,255,.4);
+}
+.date-filter{
+    display:flex;
+    gap:20px;
+}
+.date-filter .form-group{
+    flex:1;
+}
+.report-actions{
+    display:flex;
+    gap:15px;
+    margin-top:25px;
+}
+.report-actions button{
+    flex:1;
+    height:45px;
+    border:none;
+    border-radius:10px;
+    color:white;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+}
+.show-btn{
+    background:var(--primary-color);
+}
+.export-btn{
+    background:var(--secondary-color);
+}
+.show-btn:hover,
+.export-btn:hover{
+    opacity:.9;
+}
+.results-wrapper{
+    width:95%;
+    max-width:950px;
+    margin:35px auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+}
+.results-table{
+    width:100%;
+    border-collapse:collapse;
+}
+.results-table th,
+.results-table td{
+    padding:12px;
+    border-bottom:1px solid #ddd;
+    text-align:left;
+}
+.results-table th{
+    background:#f4f4f4;
+    color:#3f0097;
+}
+</style>
+<div class="report-page">
+    <div class="report-card">
+        <h2 class="report-title">Generate Report</h2>
+        <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Select Status</label>
+            <select name="status" class="form-control">
+                <option value="">-- Select Status --</option>
+                <option value="In Progress" {% if selected_status == "In Progress" %}selected{% endif %}>
+                    In Progress
+                </option>
+                <option value="To Do" {% if selected_status == "To Do" %}selected{% endif %}>
+                    To Do
+                </option>
+                <option value="Completed" {% if selected_status == "Completed" %}selected{% endif %}>
+                    Completed
+                </option>
+                <option value="Rejected" {% if selected_status == "Rejected" %}selected{% endif %}>
+                    Rejected
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Select Priority</label>
+            <select name="priority" class="form-control">
+                <option value="">-- Select Priority --</option>
+                <option value="Yes" {% if selected_priority == "Yes" %}selected{% endif %}>Yes</option>
+                <option value="High" {% if selected_priority == "High" %}selected{% endif %}>High</option>
+                <option value="Medium" {% if selected_priority == "Medium" %}selected{% endif %}>Medium</option>
+                <option value="Critical" {% if selected_priority == "Critical" %}selected{% endif %}>Critical</option>
+                <option value="Low" {% if selected_priority == "Low" %}selected{% endif %}>Low</option>
+
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Select Customer</label>
+            <select name="customer" class="form-control">
+                <option value="">-- Select Customer --</option>
+                {% for customer in customers %}
+                <option value="{{ customer.id }}"
+                {% if selected_customer == customer.id|stringformat:"s" %}selected{% endif %}>
+                {{ customer.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+        <div class="form-group">
+            <label>Select Agent</label>
+            <select name="agent" class="form-control">
+                <option value="">-- Select Agent --</option>
+                {% for agent in agents %}
+                <option value="{{ agent.id }}"
+                {% if selected_agent == agent.id|stringformat:"s" %}selected{% endif %}>
+                {{ agent.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+        <div class="date-filter">
+            <div class="form-group">
+                <label>Start Date</label>
+                <input
+                    type="date"
+                    name="start_date"
+                    class="form-control"
+                    value="{{ start_date }}">
+
+            </div>
+            <div class="form-group">
+                <label>End Date</label>
+                <input
+                    type="date"
+                    name="end_date"
+                    class="form-control"
+                    value="{{ end_date }}">
+            </div>
+        </div>
+        <div class="report-actions">
+            <button
+                type="submit"
+                name="action"
+                value="show"
+                class="show-btn">
+                Show
+            </button>
+            <button
+                type="submit"
+                name="action"
+                value="export"
+                class="export-btn">
+                Export
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+{% if action_type == "show" %}
+<div class="results-wrapper">
+    <h3>Filtered Report</h3>
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Customer Name</th>
+                <th>Agent Name</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in data_items %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.priority }}</td>
+                <td>{{ item.status }}</td>
+                <td>{{ item.created_At}}</td>
+                <td>{{item.customer_id.name}}</td>
+                <td>{{item.assigned.name}}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center;">
+                    No records found.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

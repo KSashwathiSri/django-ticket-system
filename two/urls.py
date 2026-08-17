@@ -8,6 +8,7 @@ urlpatterns = [
     path('set-password/', views.set_password, name='set_password'),
     path('login/', views.login_view, name='login'),
     path('home/', views.home, name='home'),
+    
     path('logout/', views.logout_view, name='logout'),
     path('api/login/', views.api_offer, name='api'),
     path('upload/', views.upload, name = 'upload'),
@@ -27,6 +28,5 @@ path('agents/update/<int:agent_id>/', views.update_agent, name='update_agent'),
 path('agents/delete/<int:agent_id>/', views.delete_agent, name='delete_agent'),
 path('dash',views.dashboard,name='dashboard'),
 path('',views.tickets,name='tickets'),
-
-
+path('report/',views.generate_report_view,name='report'),
 ]

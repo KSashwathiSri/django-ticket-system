@@ -8,7 +8,9 @@ class OTPVerification(models.Model):
     def __str__(self):
         return self.email
 
+
 class Customer(models.Model):
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
@@ -44,3 +46,4 @@ class Tickets(models.Model):
 
     def __str__(self):
         return f"T{self.id} - {self.subject}"
+

@@ -2,7 +2,6 @@
 {% block content %}
 
 <style>
-    /* Clean CSS Grid for recursive ticket cards instead of hardcoded row containers */
     .ticket-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -13,6 +12,14 @@
     .col {
         margin: 0;
     }
+
+    .ticket-grid .ticket-card:nth-child(odd) {
+        background-color: var(--one-use-color) !important;
+    }
+    .ticket-grid .ticket-card:nth-child(even) {
+        background-color: var(--two-use-color) !important;
+    }
+
     .ticket-card .text {
         width: 100%;
     }
@@ -51,16 +58,12 @@
 
 <div class="box-container">
     <div class="ticket-grid">
-        <!-- Dynamic Loop over your database objects -->
         {% for ticket in tickets %}
-        <!-- Uses built-in counter loops to dynamically match box1, box2, box3 coloring structures -->
-        <div class="box box{{ forloop.counter|stringformat:"s" }} col ticket-card" data-id="{{ ticket.id }}" data-subject="{{ ticket.subject|lower }}">
+        <div class="box col ticket-card" data-id="{{ ticket.id }}" data-subject="{{ ticket.subject|lower }}">
             <div class="text">
                 <button class="hello">ID: T{{ ticket.id }}</button><br><br>
                 <button class="hello">Subject: {{ ticket.subject }}</button><br><br>
                 <button class="hello">Status: {{ ticket.status }}</button>
-                
-                <!-- Operational Routing Links wired to urls.py names -->
                 <div class="ticket-actions">
                     <a href="{% url 'update_ticket' ticket.id %}" class="btn-action btn-edit">&#9998; Edit</a>
                     <a href="{% url 'delete_ticket' ticket.id %}" class="btn-action btn-delete" onclick="return confirm('Are you sure you want to delete Ticket T{{ ticket.id }}?')">&#128465;Delete</a>
@@ -90,7 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const id = card.getAttribute("data-id").toLowerCase();
                 const subject = card.getAttribute("data-subject").toLowerCase();
                 
-                // Matches input string against ticket fields instantly
                 if (id.includes(query) || subject.includes(query)) {
                     card.style.display = "flex";
                 } else {
