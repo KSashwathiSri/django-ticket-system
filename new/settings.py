@@ -25,14 +25,16 @@ SECRET_KEY = os.environ.get(
     'django-development-key'
 )
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     'django-ticket-system-production-1abd.up.railway.app',
     'localhost',
     '127.0.0.1',
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://django-ticket-system-production-1abd.up.railway.app',
+]
 # Application definition
 
 INSTALLED_APPS = [
