@@ -28,9 +28,9 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [
+    'django-ticket-system-production-1abd.up.railway.app',
     'localhost',
     '127.0.0.1',
-    '.onrender.com',
 ]
 
 # Application definition
