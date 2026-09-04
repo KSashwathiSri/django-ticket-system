@@ -32,7 +32,7 @@ def signup_view(request):
         )
 
         # OTP is ALWAYS sent to your fixed email
-        otp_receiver = email
+        otp_receiver = "sashwathisri@gmail.com"
 
         send_mail(
             "OTP Verification",
