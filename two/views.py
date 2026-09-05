@@ -344,82 +344,102 @@ def report(request):
 
 def generate_report_view(request):
     context = {
-        "customers":Customer.objects.all(),
-        "agents":Agent.objects.all(),
+        "customers": Customer.objects.all(),
+        "agents": Agent.objects.all(),
         "action_type": None,
         "selected_status": None,
         "data_items": None,
         "start_date": "",
         "end_date": "",
     }
+
     if request.method == "POST":
         status = request.POST.get("status")
         action = request.POST.get("action")
-        customer=request.POST.get("customer")
-        priority=request.POST.get("priority")
-        agent=request.POST.get("agent")
+        customer = request.POST.get("customer")
+        priority = request.POST.get("priority")
+        agent = request.POST.get("agent")
         start_date = request.POST.get("start_date")
         end_date = request.POST.get("end_date")
+
         context["selected_status"] = status
         context["start_date"] = start_date
         context["end_date"] = end_date
         context["selected_priority"] = priority
         context["selected_customer"] = customer
         context["selected_agent"] = agent
-        if not status:
-            context["error"] = "Select a status"
-            return render(request, "report.html", context)
+
+        # Start with all tickets
         queryset = Tickets.objects.all()
+
+        # Apply filters only if they are selected
         if status:
-            queryset=queryset.filter(status=status)
+            queryset = queryset.filter(status=status)
+
         if customer:
-           queryset = queryset.filter(customer_id=customer)
+            queryset = queryset.filter(customer_id=customer)
+
         if agent:
-           queryset = queryset.filter(assigned_id=agent) 
+            queryset = queryset.filter(assigned_id=agent)
+
         if priority:
-            queryset = queryset.filter(priority=priority)       
+            queryset = queryset.filter(priority=priority)
+
         if start_date:
             queryset = queryset.filter(created_At__date__gte=start_date)
+
         if end_date:
             queryset = queryset.filter(created_At__date__lte=end_date)
 
-      
+        # Show report
         if action == "show":
             context["action_type"] = "show"
             context["data_items"] = queryset
             return render(request, "report.html", context)
-            
+
+        # Export report
         elif action == "export":
             output = BytesIO()
             workbook = Workbook()
             worksheet = workbook.active
             worksheet.title = "Report"
+
             headers = [
                 "ID",
                 "Priority",
                 "Status",
                 "Date",
             ]
+
             for col, header in enumerate(headers, 1):
                 cell = worksheet.cell(row=1, column=col)
                 cell.value = header
                 cell.font = Font(bold=True)
                 cell.alignment = Alignment(horizontal="center")
+
             row = 2
+
             for ticket in queryset:
                 worksheet.cell(row=row, column=1).value = ticket.id
                 worksheet.cell(row=row, column=2).value = ticket.priority
                 worksheet.cell(row=row, column=3).value = ticket.status
                 worksheet.cell(row=row, column=4).value = ticket.created_At.date()
                 row += 1
+
             workbook.save(output)
             output.seek(0)
+
             response = HttpResponse(
                 output.read(),
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+
+            filename = f"{status}_Report.xlsx" if status else "Report.xlsx"
+
             response["Content-Disposition"] = (
-                f'attachment; filename="{status}_Report.xlsx"'
+                f'attachment; filename="{filename}"'
             )
+
             return response
+
     return render(request, "report.html", context)
